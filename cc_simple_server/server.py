@@ -6,6 +6,7 @@ from cc_simple_server.models import TaskRead
 from cc_simple_server.database import init_db
 from cc_simple_server.database import get_db_connection
 
+
 # init
 init_db()
 
@@ -15,14 +16,12 @@ app = FastAPI()
 # Edit the code below this line
 ############################################
 
-
 @app.get("/")
 async def read_root():
     """
     This is already working!!!! Welcome to the Cloud Computing!
     """
     return {"message": "Welcome to the Cloud Computing!"}
-
 
 # POST ROUTE data is sent in the body of the request
 @app.post("/tasks/", response_model=TaskRead)
@@ -36,8 +35,23 @@ async def create_task(task_data: TaskCreate):
     Returns:
         TaskRead: The created task data
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tasks (title, description, completed) VALUES (?, ?, ?)",
+        (task_data.title, task_data.description, task_data.completed),
+    )
+    conn.commit()
+
+    # Query to get the last row based on the "id" column
+    rows = cursor.execute("SELECT * FROM tasks ORDER BY id DESC LIMIT 1")
+
+    # conn.close()
+    for r in rows:
+        print(r)
+
+    return [TaskRead(id=row["id"], title=row["title"], description=row["description"], completed=bool(row["completed"])) for row in rows]
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
@@ -51,7 +65,15 @@ async def get_tasks():
     Returns:
         list[TaskRead]: A list of all tasks in the database
     """
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks")
+    rows = cursor.fetchall()
+
+    conn.close()
+    #raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+    return [TaskRead(id=row["id"], title=row["title"], description=row["description"], completed=bool(row["completed"])) for row in rows]
 
 
 # UPDATE ROUTE data is sent in the body of the request and the task_id is in the URL
@@ -83,3 +105,10 @@ async def delete_task(task_id: int):
         dict: A message indicating that the task was deleted successfully
     """
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
+
+# task_data = {
+#              "title": "Finish assignment",
+#              "description": "Complete all API routes",
+#              "completed": False
+#              }
+# create_task(task_data)
