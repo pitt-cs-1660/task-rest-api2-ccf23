@@ -43,15 +43,10 @@ async def create_task(task_data: TaskCreate):
         (task_data.title, task_data.description, task_data.completed),
     )
     conn.commit()
+    task_id = cursor.lastrowid
+    conn.close()
 
-    # Query to get the last row based on the "id" column
-    rows = cursor.execute("SELECT * FROM tasks ORDER BY id DESC LIMIT 1")
-
-    # conn.close()
-    for r in rows:
-        print(r)
-
-    return [TaskRead(id=row["id"], title=row["title"], description=row["description"], completed=bool(row["completed"])) for row in rows]
+    return TaskRead(id=task_id, title=task_data.title, description=task_data.description, completed=task_data.completed)
 
 # GET ROUTE to get all tasks
 @app.get("/tasks/", response_model=list[TaskRead])
