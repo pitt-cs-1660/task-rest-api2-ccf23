@@ -135,7 +135,7 @@ async def delete_task(task_id: int):
         conn.commit()
         conn.close()
         print("deleted")
-        return {"message": "Task" + str(task_id) + "deleted"}
+        return {"message": f"Task{task_id}deleted"}
     else:
         print("exception raised")
         raise HTTPException(
